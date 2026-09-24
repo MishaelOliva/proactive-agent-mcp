@@ -1,0 +1,32 @@
+[Unit]
+Description=Proactive Agent MCP Server (Daemonized Autonomous Runtime)
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=agentuser
+WorkingDirectory=/opt/proactive-agent-mcp
+Environment="PYTHONUNBUFFERED=1"
+Environment="PATH=/opt/proactive-agent-mcp/.venv/bin:/usr/local/bin:/usr/bin"
+ExecStart=/opt/proactive-agent-mcp/.venv/bin/python -m proactive_agent_mcp.server
+
+# Resiliency & Unattended Execution
+Restart=always
+RestartSec=5s
+KillMode=process
+TimeoutStopSec=15s
+
+# Security sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/proactive-agent-mcp/logs
+
+# Standard output and error routing to systemd journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=proactive-agent-mcp
+
+[Install]
+WantedBy=multi-user.target

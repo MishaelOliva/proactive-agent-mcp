@@ -1,0 +1,18 @@
+{
+  "runtime": "openclaw-v2",
+  "agent_id": "sentinel-lead-agent",
+  "heartbeat_interval_sec": 30,
+  "mcp_servers": [
+    {
+      "name": "proactive_agent_mcp",
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "proactive_agent_mcp.server"]
+    }
+  ],
+  "autonomous_policies": {
+    "auto_triage": true,
+    "max_cost_per_hour_usd": 2.50,
+    "escalation_webhook": "https://api.internal/alerts/hitl"
+  }
+}

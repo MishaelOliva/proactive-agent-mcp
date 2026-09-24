@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "proactive-agent": {
+      "command": "python",
+      "args": [
+        "-m",
+        "proactive_agent_mcp.server"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}

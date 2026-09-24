@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  proactive-agent-mcp:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: proactive-agent-mcp
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=INFO
+      - AGENT_SESSION_BUDGET=10.0
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
