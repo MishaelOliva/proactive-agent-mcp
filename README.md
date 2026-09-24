@@ -188,6 +188,22 @@ Ran 14 tests in 0.070s - OK (100% Passing)
 
 ---
 
+## 🎯 Defending This Project in Technical Interviews
+
+1. **Why build an MCP server instead of a REST API?**
+   *"MCP (Model Context Protocol) is the emerging standard for connecting AI agents to external tools. Unlike REST APIs that require custom integration code for every agent runtime, an MCP server is instantly compatible with Claude Desktop, OpenClaw, Cursor, and any MCP-compliant orchestrator via a single JSON-RPC 2.0 transport. This means one implementation serves every frontier LLM agent without adapter code."*
+
+2. **Why enforce Human-in-the-Loop (HITL) for autonomous agents?**
+   *"Autonomous agents executing destructive mutations (system wipes, policy overrides, budget-exceeding operations) without human oversight is a real production safety risk. The HITL gate generates cryptographically signed HMAC approval tickets that require explicit supervisor confirmation before execution proceeds. This mirrors enterprise change-management workflows while keeping the agent autonomous for routine operations."*
+
+3. **How does the cost budget guardrail work?**
+   *"Every tool call that invokes an LLM provider (Claude, GPT-4o, Gemini, Ollama) reports its prompt and completion token counts to `track_cost_budget`. The server maintains a running session total with per-model pricing rates and halts execution with `HALT_BUDGET_EXCEEDED` if the session breaches configurable financial limits. This prevents runaway agent loops from accumulating unexpected API costs."*
+
+4. **How did you validate MCP protocol compliance?**
+   *"The test suite validates the complete JSON-RPC 2.0 handshake lifecycle: `initialize` capability negotiation, `tools/list` discovery, individual tool invocations with schema-validated inputs/outputs, and `ping` keepalive. All 14 tests run in under 70ms, ensuring the server conforms to the MCP 2024-11-05 specification."*
+
+---
+
 ## 👤 Author & Maintainer
 
 **Mishael Dioneda Oliva**
