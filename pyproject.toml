@@ -5,26 +5,24 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "proactive-agent-mcp"
 version = "1.0.0"
-description = "Autonomous Proactive Agent & Document Intelligence MCP (Model Context Protocol) Server"
+description = "Model Context Protocol (MCP) server for autonomous task triage, document compliance evaluation, and HITL authorization guardrails."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Mishael Oliva", email = "mishaeloliva.work@gmail.com"}
+    {name = "Mishael Oliva", email = "mishael.oliva2002@gmail.com"}
 ]
 keywords = [
     "mcp",
     "model-context-protocol",
-    "agentic-ai",
-    "autonomous-agents",
-    "openclaw",
-    "rag",
-    "fastapi",
+    "ai-agent",
     "compliance",
-    "guardrails"
+    "guardrails",
+    "json-rpc",
+    "hitl"
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -34,13 +32,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 dependencies = [
-    "pydantic>=2.0.0"
+    "pydantic>=2.0.0,<3.0.0"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "flake8>=7.0.0"
+    "pytest>=8.0.0,<10.0.0",
+    "ruff>=0.4.0"
 ]
 
 [project.scripts]
@@ -49,3 +47,21 @@ proactive-agent-mcp = "proactive_agent_mcp.server:main"
 [project.urls]
 Homepage = "https://github.com/MishaelOliva/proactive-agent-mcp"
 Repository = "https://github.com/MishaelOliva/proactive-agent-mcp"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["proactive_agent_mcp*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "deploy"
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]
