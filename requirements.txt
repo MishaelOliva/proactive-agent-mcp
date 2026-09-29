@@ -1,2 +1,8 @@
-pydantic>=2.0.0
-pytest>=8.0.0
+# Runtime dependency.
+#
+# The authoritative dependency list lives in pyproject.toml; this file exists
+# for tools and workflows that expect a requirements file. Keep the two in sync.
+#
+# Install from the project root with:  pip install -e ".[dev]"
+
+pydantic>=2.0.0,<3.0.0

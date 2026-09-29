@@ -2,68 +2,120 @@
 Resource providers for Proactive Agent MCP Server.
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
 import json
+import logging
+import os
 import platform
+import sys
 import time
-from typing import Any, Dict, List
+from typing import Any
+
 from ..protocol import Resource
 
-_START_TIME = time.time()
+logger = logging.getLogger(__name__)
 
-RESOURCES: List[Resource] = [
+_START_MONOTONIC = time.monotonic()
+
+RESOURCES: list[Resource] = [
     Resource(
         uri="system://health",
-        name="System Health & Daemon Telemetry",
-        description="Live uptime, process memory, operating environment, and background health status.",
-        mimeType="application/json"
+        name="System Health & Runtime Telemetry",
+        description=(
+            "Uptime, process resource usage, negotiated protocol version, budget "
+            "and approval-ticket counters, and triage queue depth."
+        ),
+        mimeType="application/json",
     ),
     Resource(
         uri="compliance://standards",
         name="Organizational Compliance Policies",
-        description="Formal compliance requirements for asset onboarding, security policies, and schema boundaries.",
-        mimeType="text/markdown"
-    )
+        description=(
+            "Compliance requirements for asset onboarding, agent governance, and data handling."
+        ),
+        mimeType="text/markdown",
+    ),
 ]
 
 
-def read_resource(uri: str) -> Dict[str, Any]:
+def _peak_memory_mb() -> float | None:
+    """
+    Peak resident set size in megabytes, or ``None`` where unavailable.
+
+    ``ru_maxrss`` is reported in kilobytes on Linux and in bytes on macOS, so
+    the unit is normalised per platform. Windows has no ``resource`` module, and
+    rather than guess we report nothing at all.
+    """
+    try:
+        import resource
+    except ImportError:
+        return None
+
+    raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if sys.platform == "darwin":
+        return round(raw / (1024 * 1024), 2)
+    return round(raw / 1024, 2)
+
+
+def _health_payload() -> dict[str, Any]:
+    # Imported here rather than at module scope: the tools package imports this
+    # provider's package, so a top-level import would be circular.
+    from ..tools import get_active_session
+    from ..tools.guardrails import COST_GUARD, pending_approval_tickets
+    from ..tools.triage import queue_stats
+
+    session_id = get_active_session()
+    memory = _peak_memory_mb()
+    approvals = pending_approval_tickets()
+
+    payload: dict[str, Any] = {
+        "server": "proactive-agent-mcp",
+        "status": "HEALTHY",
+        "uptime_seconds": round(time.monotonic() - _START_MONOTONIC, 2),
+        "host_os": f"{platform.system()} {platform.release()}",
+        "python_version": platform.python_version(),
+        "pid": os.getpid(),
+        "active_session_id": session_id,
+        "budget": COST_GUARD.status(session_id),
+        "approvals": approvals,
+        "event_queue": queue_stats(),
+        "signing_secret_is_ephemeral": approvals["secret_is_ephemeral"],
+    }
+
+    if memory is not None:
+        payload["peak_memory_mb"] = memory
+    else:
+        payload["peak_memory_mb"] = None
+        payload["peak_memory_note"] = "Not reported on this platform."
+
+    return payload
+
+
+def read_resource(uri: str) -> dict[str, Any]:
     if uri == "system://health":
-        uptime_sec = round(time.time() - _START_TIME, 2)
-        content = {
-            "server": "proactive-agent-mcp",
-            "version": "1.0.0",
-            "status": "HEALTHY",
-            "uptime_seconds": uptime_sec,
-            "host_os": f"{platform.system()} {platform.release()}",
-            "python_version": platform.python_version(),
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
         return {
             "contents": [
                 {
                     "uri": uri,
                     "mimeType": "application/json",
-                    "text": json.dumps(content, indent=2)
+                    "text": json.dumps(_health_payload(), indent=2, default=str),
                 }
             ]
         }
 
-    elif uri == "compliance://standards":
-        text = """# Enterprise AI & Asset Compliance Standards (2026)
-1. **Zero-Trust Asset Handover:** All provisioned endpoints must have BitLocker, Entra ID join, and verified signatures.
-2. **Autonomous Agent Governance:** Proactive agents are restricted to read-only queue triage and schema drafting. Destructive mutations require HITL authorization tokens.
-3. **Data Residency & Privacy:** Sensitive PII must be scrubbed prior to dispatching to external frontier model endpoints.
-"""
-        return {
-            "contents": [
-                {
-                    "uri": uri,
-                    "mimeType": "text/markdown",
-                    "text": text
-                }
-            ]
-        }
+    if uri == "compliance://standards":
+        text = (
+            "# Enterprise AI & Asset Compliance Standards\n"
+            "\n"
+            "1. **Asset handover:** Provisioned endpoints require disk encryption, a "
+            "directory account binding, and a signed accountability record.\n"
+            "2. **Agent governance:** Autonomous agents are limited to queue triage "
+            "and schema validation. Destructive actions require a human approval "
+            "ticket whose confirmation code is delivered out of band.\n"
+            "3. **Data handling:** Credentials and identifiers must be redacted "
+            "before they reach a third-party model endpoint.\n"
+        )
+        return {"contents": [{"uri": uri, "mimeType": "text/markdown", "text": text}]}
 
-    else:
-        raise ValueError(f"Resource with URI '{uri}' not found.")
+    raise ValueError(f"Resource with URI '{uri}' not found.")

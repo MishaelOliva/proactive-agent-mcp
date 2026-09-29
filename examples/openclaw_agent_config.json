@@ -7,12 +7,23 @@
       "name": "proactive_agent_mcp",
       "transport": "stdio",
       "command": "python",
-      "args": ["-m", "proactive_agent_mcp.server"]
+      "args": ["-m", "proactive_agent_mcp.server"],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "MCP_SIGNING_SECRET": "replace-with-openssl-rand-hex-32",
+        "MCP_SESSION_BUDGET_USD": "10.0",
+        "MCP_LOG_LEVEL": "INFO"
+      }
     }
   ],
   "autonomous_policies": {
     "auto_triage": true,
-    "max_cost_per_hour_usd": 2.50,
+    "lease_seconds": 300,
+    "require_human_approval_for": [
+      "destructive_action",
+      "permission_change",
+      "external_dispatch"
+    ],
     "escalation_webhook": "https://api.internal/alerts/hitl"
   }
 }

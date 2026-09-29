@@ -1,3 +1,1 @@
-"""
-Unit and Integration Tests for Proactive Agent MCP Server.
-"""
+"""Test suite for proactive-agent-mcp."""

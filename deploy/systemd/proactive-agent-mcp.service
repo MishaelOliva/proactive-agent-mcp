@@ -1,32 +1,45 @@
 [Unit]
-Description=Proactive Agent MCP Server (Daemonized Autonomous Runtime)
-After=network.target network-online.target
-Wants=network-online.target
+Description=Proactive Agent MCP Server (stdio agent runtime)
+Documentation=https://github.com/MishaelOliva/proactive-agent-mcp
+After=network.target
 
 [Service]
 Type=simple
 User=agentuser
+Group=agentuser
 WorkingDirectory=/opt/proactive-agent-mcp
-Environment="PYTHONUNBUFFERED=1"
-Environment="PATH=/opt/proactive-agent-mcp/.venv/bin:/usr/local/bin:/usr/bin"
+
+# Generated once with: openssl rand -hex 32
+# The server refuses to use a well-known default, so this must be set for
+# approval tokens to remain valid across restarts.
+EnvironmentFile=/etc/proactive-agent-mcp/env
+
 ExecStart=/opt/proactive-agent-mcp/.venv/bin/python -m proactive_agent_mcp.server
 
-# Resiliency & Unattended Execution
-Restart=always
+Restart=on-failure
 RestartSec=5s
-KillMode=process
 TimeoutStopSec=15s
+KillSignal=SIGINT
 
-# Security sandboxing
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=/opt/proactive-agent-mcp/logs
-
-# Standard output and error routing to systemd journal
+# The server reads JSON-RPC from stdin. Under systemd, keep stdin connected
+# rather than /dev/null so a supervisor can drive it.
+StandardInput=pipe
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=proactive-agent-mcp
+
+# The process needs no write access outside its own state directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=/opt/proactive-agent-mcp/state
 
 [Install]
 WantedBy=multi-user.target

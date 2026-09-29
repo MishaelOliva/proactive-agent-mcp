@@ -1,19 +1,38 @@
-version: '3.8'
+# Proactive Agent MCP server.
+#
+# The server is launched by an MCP host and speaks JSON-RPC on stdin/stdout, so
+# it must keep stdin open and must not be given a TTY on the protocol stream.
+# Run it with:
+#
+#   docker compose run --rm proactive-agent-mcp
+#
+# Do not use `up`: without a client attached there is nothing to talk to.
 
 services:
   proactive-agent-mcp:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    container_name: proactive-agent-mcp
-    restart: unless-stopped
-    environment:
-      - LOG_LEVEL=INFO
-      - AGENT_SESSION_BUDGET=10.0
+    image: proactive-agent-mcp:local
+    # `stdin_open` keeps the pipe available; `tty` is deliberately not set,
+    # because a TTY would corrupt the JSON-RPC stream.
     stdin_open: true
-    tty: true
+    environment:
+      # Generate with: openssl rand -hex 32
+      # Leaving this unset makes the server fall back to a random per-process
+      # secret, which is acceptable locally but not for a shared deployment.
+      MCP_SIGNING_SECRET: ${MCP_SIGNING_SECRET:?set MCP_SIGNING_SECRET in .env}
+      MCP_SESSION_BUDGET_USD: "5.0"
+      MCP_LOG_LEVEL: "INFO"
+    # No ports published: the transport is stdio.
+    restart: unless-stopped
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp

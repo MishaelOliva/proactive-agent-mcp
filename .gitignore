@@ -1,43 +1,62 @@
-# Python
+# Byte-compiled / cache
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
+
+# Distribution / packaging
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
+.egg-info/
 .eggs/
-lib/
-lib64/
-parts/
 sdist/
-var/
 wheels/
-*.egg-info/
-.installed.cfg
 *.egg
+.installed.cfg
+MANIFEST
+
+# Virtual environments
 .venv/
 venv/
+env/
 ENV/
 
-# Testing & Coverage
+# Testing and coverage
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
+*.swn
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Package managers
+# Lockfiles: this is a library, so it does not commit its own resolution
 uv.lock
+poetry.lock
+Pipfile.lock
+requirements.lock
+
+# Logs and local state
+*.log
+logs/
+state/

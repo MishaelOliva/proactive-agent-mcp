@@ -2,12 +2,12 @@
   "mcpServers": {
     "proactive-agent": {
       "command": "python",
-      "args": [
-        "-m",
-        "proactive_agent_mcp.server"
-      ],
+      "args": ["-m", "proactive_agent_mcp.server"],
       "env": {
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONUNBUFFERED": "1",
+        "MCP_SIGNING_SECRET": "replace-with-openssl-rand-hex-32",
+        "MCP_SESSION_BUDGET_USD": "5.0",
+        "MCP_LOG_LEVEL": "INFO"
       }
     }
   }
