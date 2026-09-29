@@ -61,6 +61,10 @@ class StdioClient:
             self.process.stdin.close()
         except Exception:
             pass
+        # communicate() unconditionally flushes stdin. Having closed it by hand
+        # above, that flush raises ValueError, so detach the handle and let
+        # subprocess skip it.
+        self.process.stdin = None
         try:
             _, stderr = self.process.communicate(timeout=10)
             self.stderr_chunks.append(stderr or "")
@@ -194,6 +198,7 @@ class TestStartupWithoutConfiguredSecret(unittest.TestCase):
             self.assertIn("result", response)
 
             process.stdin.close()
+            process.stdin = None
             _, stderr = process.communicate(timeout=10)
         finally:
             if process.poll() is None:
