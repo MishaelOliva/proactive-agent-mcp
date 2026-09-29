@@ -2,8 +2,7 @@ import unittest
 from proactive_agent_mcp.server import MCPServer
 from proactive_agent_mcp.protocol import (
     MCP_PROTOCOL_VERSION,
-    METHOD_NOT_FOUND,
-    PARSE_ERROR
+    METHOD_NOT_FOUND
 )
 
 class TestMCPProtocol(unittest.TestCase):

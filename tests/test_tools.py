@@ -1,5 +1,5 @@
 import unittest
-from proactive_agent_mcp.tools.triage import poll_event_queue, push_event
+from proactive_agent_mcp.tools.triage import poll_event_queue
 from proactive_agent_mcp.tools.compliance import evaluate_document_compliance
 from proactive_agent_mcp.tools.knowledge import query_rag_knowledge
 from proactive_agent_mcp.tools.guardrails import (
@@ -50,7 +50,9 @@ class TestMCPTools(unittest.TestCase):
         )
         self.assertEqual(approval["status"], "APPROVAL_REQUIRED")
         ticket_id = approval["ticket_id"]
-        code = approval["confirmation_code"]
+        # Supervisor obtains code from ticket record / out-of-band channel
+        from proactive_agent_mcp.tools.guardrails import _APPROVAL_TICKETS
+        code = _APPROVAL_TICKETS[ticket_id]["expected_confirmation_code"]
 
         # Bad code fails
         failed = verify_approval_token(ticket_id, "WRONG_CODE")
@@ -60,6 +62,12 @@ class TestMCPTools(unittest.TestCase):
         verified = verify_approval_token(ticket_id, code)
         self.assertTrue(verified["authorized"])
         self.assertEqual(verified["status"], "AUTHORIZED_FOR_DISPATCH")
+
+        # Single-use: Replay attempt fails
+        consumed = verify_approval_token(ticket_id, code)
+        self.assertFalse(consumed["authorized"])
+        self.assertIn("already been consumed", consumed["error"])
+
 
     def test_track_cost_budget(self):
         res1 = track_cost_budget("sess-test-1", 1000, 500, model_name="gemini-1.5-flash", session_budget_usd=1.0)
