@@ -2,9 +2,9 @@
 Tool registry and dispatcher for Proactive Agent MCP Server.
 """
 
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List
 from ..protocol import Tool
-from .triage import poll_event_queue, push_event
+from .triage import poll_event_queue
 from .compliance import evaluate_document_compliance
 from .knowledge import query_rag_knowledge
 from .guardrails import request_human_approval, verify_approval_token, track_cost_budget

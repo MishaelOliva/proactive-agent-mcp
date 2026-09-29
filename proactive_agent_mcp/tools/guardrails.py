@@ -6,11 +6,13 @@ Enforces execution boundaries, token spend caps, and authorization tickets.
 from datetime import datetime, timezone, timedelta
 import hashlib
 import hmac
+import os
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-# Secret key for HMAC token signing (in production loaded from environment)
-_SIGNING_SECRET = b"proactive-agent-mcp-internal-secret-2026"
+# Secret key for HMAC token signing (loaded from environment with safe fallback)
+_RAW_SECRET = os.environ.get("MCP_SIGNING_SECRET", "proactive-agent-mcp-internal-secret-2026")
+_SIGNING_SECRET = _RAW_SECRET.encode("utf-8")
 
 # In-memory approval ticket registry
 _APPROVAL_TICKETS: Dict[str, Dict[str, Any]] = {}
@@ -19,13 +21,15 @@ _APPROVAL_TICKETS: Dict[str, Dict[str, Any]] = {}
 _SESSION_BUDGETS: Dict[str, Dict[str, Any]] = {}
 
 # Approximate token costs per 1,000 tokens (USD)
+# Source: Public API pricing pages, last checked September 2026
 MODEL_PRICING = {
+    "gemini-2.0-flash": {"prompt": 0.00010, "completion": 0.00040},
     "gemini-1.5-flash": {"prompt": 0.000075, "completion": 0.00030},
-    "gemini-1.5-pro": {"prompt": 0.00125, "completion": 0.00500},
     "claude-3-5-sonnet": {"prompt": 0.00300, "completion": 0.01500},
     "gpt-4o": {"prompt": 0.00250, "completion": 0.01000},
     "local-ollama": {"prompt": 0.0, "completion": 0.0}
 }
+PRICING_LAST_CHECKED = "2026-09"
 
 
 def _generate_hmac_token(ticket_id: str, action: str) -> str:
@@ -40,11 +44,14 @@ def request_human_approval(
     urgency: str = "normal"
 ) -> Dict[str, Any]:
     """
-    Halts autonomous execution and requests explicit human authorization ticket for sensitive actions.
+    Halts autonomous execution and creates an authorization ticket for sensitive actions.
+    The confirmation token is stored in the internal ticket record and must be supplied
+    by a supervisor through an out-of-band channel.
     """
     ticket_id = f"TICK-{uuid.uuid4().hex[:8].upper()}"
     token = _generate_hmac_token(ticket_id, action_name)
-    expires_at = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(hours=24)).isoformat()
 
     ticket_record = {
         "ticket_id": ticket_id,
@@ -53,7 +60,7 @@ def request_human_approval(
         "rationale": rationale,
         "urgency": urgency,
         "status": "AWAITING_HUMAN_CONFIRMATION",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": now.isoformat(),
         "expires_at": expires_at,
         "expected_confirmation_code": token
     }
@@ -62,10 +69,10 @@ def request_human_approval(
     return {
         "status": "APPROVAL_REQUIRED",
         "ticket_id": ticket_id,
-        "message": f"Action '{action_name}' requires human approval before execution.",
-        "confirmation_code": token,
+        "action_name": action_name,
+        "message": f"Action '{action_name}' requires supervisor authorization before execution.",
         "expires_at": expires_at,
-        "instructions": f"Human supervisor must review rationale and provide token '{token}' to continue."
+        "instructions": f"A human supervisor must review the action and rationale, then submit the confirmation code for ticket '{ticket_id}' via verify_approval_token."
     }
 
 
@@ -74,7 +81,8 @@ def verify_approval_token(
     confirmation_code: str
 ) -> Dict[str, Any]:
     """
-    Verifies that a human has authorized an awaiting execution ticket.
+    Verifies that a human supervisor has authorized an awaiting execution ticket.
+    Enforces ticket existence, single-use consumption, expiration, and constant-time token comparison.
     """
     if ticket_id not in _APPROVAL_TICKETS:
         return {"authorized": False, "error": f"Ticket '{ticket_id}' not found."}
@@ -83,7 +91,16 @@ def verify_approval_token(
     if ticket["status"] == "EXECUTED":
         return {"authorized": False, "error": f"Ticket '{ticket_id}' has already been consumed."}
 
-    if confirmation_code.strip().upper() != ticket["expected_confirmation_code"]:
+    # Check expiration
+    expires_dt = datetime.fromisoformat(ticket["expires_at"])
+    if datetime.now(timezone.utc) > expires_dt:
+        ticket["status"] = "EXPIRED"
+        return {"authorized": False, "error": f"Ticket '{ticket_id}' has expired."}
+
+    # Constant-time comparison to prevent timing side-channel attacks
+    expected = ticket["expected_confirmation_code"]
+    provided = confirmation_code.strip().upper()
+    if not hmac.compare_digest(provided, expected):
         return {"authorized": False, "error": "Invalid confirmation code. Authorization rejected."}
 
     ticket["status"] = "EXECUTED"
@@ -102,7 +119,7 @@ def track_cost_budget(
     session_id: str,
     prompt_tokens: int,
     completion_tokens: int,
-    model_name: str = "gemini-1.5-flash",
+    model_name: str = "gemini-2.0-flash",
     session_budget_usd: float = 5.0
 ) -> Dict[str, Any]:
     """
@@ -118,7 +135,7 @@ def track_cost_budget(
             "calls_recorded": 0
         }
 
-    rates = MODEL_PRICING.get(model_name, MODEL_PRICING["gemini-1.5-flash"])
+    rates = MODEL_PRICING.get(model_name, MODEL_PRICING["gemini-2.0-flash"])
     call_cost = ((prompt_tokens / 1000.0) * rates["prompt"]) + ((completion_tokens / 1000.0) * rates["completion"])
 
     rec = _SESSION_BUDGETS[session_id]
