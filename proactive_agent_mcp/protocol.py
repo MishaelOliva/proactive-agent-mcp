@@ -5,7 +5,6 @@ Conforms to MCP Specification (2024-11-05).
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
-import json
 
 MCP_PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "proactive-agent-mcp"

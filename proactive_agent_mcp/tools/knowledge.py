@@ -3,8 +3,7 @@ Knowledge Base & Semantic RAG Retrieval Tooling.
 Interfaces with local vector indices (e.g. bge-small-en-v1.5) or RAG backends for factual grounding.
 """
 
-from typing import Any, Dict, List
-import math
+from typing import Any, Dict
 
 # Representative knowledge chunks indexed in the MCP server
 _KNOWLEDGE_STORE = [
@@ -42,7 +41,7 @@ def _compute_relevance(query: str, chunk: Dict[str, Any]) -> float:
 
     score = 0.0
     text = (chunk["title"] + " " + chunk["content"] + " " + " ".join(chunk["keywords"])).lower()
-    
+
     matches = sum(1 for term in query_terms if term in text)
     score += (matches / len(query_terms)) * 0.7
 

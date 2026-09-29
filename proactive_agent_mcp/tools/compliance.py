@@ -3,7 +3,7 @@ Document Compliance & Structural Schema Evaluation Tooling.
 Validates unstructured or semi-structured data against organizational compliance policies.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 import re
 
 SCHEMAS = {

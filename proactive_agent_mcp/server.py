@@ -13,10 +13,8 @@ from .protocol import (
     SERVER_NAME,
     SERVER_VERSION,
     PARSE_ERROR,
-    INVALID_REQUEST,
     METHOD_NOT_FOUND,
     INVALID_PARAMS,
-    INTERNAL_ERROR,
     make_jsonrpc_response,
     make_jsonrpc_error
 )
@@ -49,7 +47,6 @@ class MCPServer:
         # 1. Initialize
         if method == "initialize":
             self.initialized = True
-            client_version = params.get("protocolVersion", MCP_PROTOCOL_VERSION)
             return make_jsonrpc_response(req_id, {
                 "protocolVersion": MCP_PROTOCOL_VERSION,
                 "capabilities": {

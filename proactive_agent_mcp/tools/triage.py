@@ -5,7 +5,7 @@ Enables agents to autonomously discover and triage incoming events without user 
 
 from datetime import datetime, timezone
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # In-memory mock queue state (persisted per server lifecycle)
 _MOCK_EVENT_STORE: List[Dict[str, Any]] = [

@@ -4,10 +4,9 @@ Resource providers for Proactive Agent MCP Server.
 
 from datetime import datetime, timezone
 import json
-import os
 import platform
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from ..protocol import Resource
 
 _START_TIME = time.time()
