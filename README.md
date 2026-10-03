@@ -190,4 +190,4 @@ verifies the wheel installs in a clean environment, and smoke tests the containe
 [MIT](LICENSE).
 
 ---
-*Built by [Mishael Oliva](https://github.com/MishaelOliva) • [LinkedIn](https://linkedin.com/in/mishael-oliva)*
+*Built by [Mishael Oliva](https://github.com/MishaelOliva) • [LinkedIn](https://www.linkedin.com/in/mishael-oliva-96a31b3a2)*
