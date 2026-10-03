@@ -249,7 +249,7 @@ TOOLS: list[Tool] = [
                 "session_id": {"type": "string", "maxLength": 128},
                 "prompt_tokens": {"type": "integer", "minimum": 0},
                 "completion_tokens": {"type": "integer", "minimum": 0},
-                "model_name": {"type": "string", "default": "gemini-2.0-flash", "maxLength": 128},
+                "model_name": {"type": "string", "default": "gemini-2.5-flash", "maxLength": 128},
                 "session_budget_usd": {
                     "type": "number",
                     "exclusiveMinimum": 0,

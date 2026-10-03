@@ -283,16 +283,35 @@ def pending_approval_tickets() -> dict[str, Any]:
 # --------------------------------------------------------------------------
 
 #: Illustrative USD per 1,000 tokens. Real deployments should load these from a
-#: pricing service; treat them as configuration, not as ground truth.
-MODEL_PRICING: dict[str, dict[str, float]] = {
-    "gemini-2.0-flash": {"prompt": 0.00010, "completion": 0.00040},
-    "gemini-1.5-flash": {"prompt": 0.000075, "completion": 0.00030},
+#: pricing service or configure MCP_MODEL_PRICING; treat them as configuration, not as ground truth.
+_DEFAULT_MODEL_PRICING: dict[str, dict[str, float]] = {
+    "gemini-2.5-flash": {"prompt": 0.000075, "completion": 0.00030},
+    "gemini-2.5-pro": {"prompt": 0.00125, "completion": 0.00500},
     "claude-3-5-sonnet": {"prompt": 0.00300, "completion": 0.01500},
     "gpt-4o": {"prompt": 0.00250, "completion": 0.01000},
     "local-ollama": {"prompt": 0.0, "completion": 0.0},
 }
-PRICING_LAST_CHECKED = "2026-09"
-_UNKNOWN_MODEL = "gemini-2.0-flash"
+
+
+def _load_model_pricing() -> dict[str, dict[str, float]]:
+    custom_pricing = os.environ.get("MCP_MODEL_PRICING")
+    if custom_pricing:
+        try:
+            parsed = json.loads(custom_pricing)
+            if isinstance(parsed, dict):
+                merged = dict(_DEFAULT_MODEL_PRICING)
+                for k, v in parsed.items():
+                    if isinstance(v, dict):
+                        merged[k] = v
+                return merged
+        except Exception:
+            pass
+    return dict(_DEFAULT_MODEL_PRICING)
+
+
+MODEL_PRICING: dict[str, dict[str, float]] = _load_model_pricing()
+PRICING_LAST_CHECKED = "2026-10"
+_UNKNOWN_MODEL = "gemini-2.5-flash"
 
 #: Per-session ceiling used when the caller does not supply one.
 DEFAULT_SESSION_BUDGET_USD = float(os.environ.get("MCP_SESSION_BUDGET_USD", "5.0"))

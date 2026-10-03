@@ -78,7 +78,7 @@ class TrackCostBudgetArgs(_Args):
     session_id: str = Field(min_length=1, max_length=128)
     prompt_tokens: int = Field(ge=0, le=100_000_000)
     completion_tokens: int = Field(ge=0, le=100_000_000)
-    model_name: str = Field("gemini-2.0-flash", min_length=1, max_length=128)
+    model_name: str = Field("gemini-2.5-flash", min_length=1, max_length=128)
     session_budget_usd: float | None = Field(None, gt=0.0, le=1_000_000.0)
 
 
